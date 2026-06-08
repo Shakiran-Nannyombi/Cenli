@@ -5,6 +5,10 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+  preview: {
+    // Allow all hosts so the container works on Cloud Run (and any other hosting)
+    allowedHosts: true,
+  },
   plugins: [
     // TanStack Start SSR (includes router functionality)
     tanstackStart({
