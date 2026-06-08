@@ -48,7 +48,8 @@ def _mcp_schema_to_gemini(mcp_schema: dict) -> types.Schema:
     Convert a JSON Schema fragment (from MCP tool inputSchema) to a
     Gemini ``types.Schema`` object.
 
-    Handles nested properties and required arrays.
+    Handles nested properties, required arrays, and array item schemas.
+    Gemini 3 requires array types to always have an items field.
     """
     schema_type = _MCP_TYPE_MAP.get(
         mcp_schema.get("type", "string"), types.Type.STRING
@@ -59,18 +60,26 @@ def _mcp_schema_to_gemini(mcp_schema: dict) -> types.Schema:
     for prop_name, prop_schema in mcp_schema.get("properties", {}).items():
         props[prop_name] = _mcp_schema_to_gemini(prop_schema)
 
+    # Gemini 3 requires items schema for array types — default to STRING
+    items_schema: types.Schema | None = None
+    if schema_type == types.Type.ARRAY:
+        raw_items = mcp_schema.get("items", {})
+        items_schema = _mcp_schema_to_gemini(raw_items) if raw_items else types.Schema(type=types.Type.STRING)
+
     if props:
         return types.Schema(
             type=schema_type,
             properties=props,
             required=required if required else None,
             description=mcp_schema.get("description"),
+            items=items_schema,
         )
 
     return types.Schema(
         type=schema_type,
         description=mcp_schema.get("description"),
         enum=mcp_schema.get("enum"),
+        items=items_schema,
     )
 
 
