@@ -1,18 +1,18 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Bell, GitCommitVertical, LogOut, Search, Settings2, ShieldCheck, UserCircle2, Zap } from "lucide-react";
+import { Bell, GitCommitVertical, LogOut, Search, Settings2, ShieldCheck, UserCircle2 } from "lucide-react";
 import { STATUS_META, type CommitStatus } from "@/lib/dpe-data";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 const NAV = [
-  { label: "Home",        to: "/" },
-  { label: "About",       to: "/about" },
-  { label: "Pipelines",   to: "/dashboard" },
-  { label: "Telemetry",   to: "/telemetry" },
+  { label: "Home", to: "/" },
+  { label: "About", to: "/about" },
+  { label: "Pipelines", to: "/dashboard" },
+  { label: "Telemetry", to: "/telemetry" },
   { label: "Evaluations", to: "/evaluations" },
-  { label: "Policies",    to: "/policies" },
-  { label: "Agents",      to: "/agents" },
+  { label: "Policies", to: "/policies" },
+  { label: "Agents", to: "/agents" },
 ] as const;
 
 export function Header() {
@@ -25,9 +25,11 @@ export function Header() {
     <header className="sticky top-0 z-20 border-b border-border bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-6 py-3">
         <Link to="/" className="flex items-center gap-2">
-          <div className="relative grid h-8 w-8 place-items-center rounded-md bg-gradient-to-br from-primary to-accent shadow-[0_0_20px_oklch(0.74_0.17_175/0.4)]">
-            <Zap className="h-4 w-4 text-background" />
-          </div>
+          <img
+            src="/logocenli.png"
+            alt="Cenli"
+            className="h-8 w-8 rounded-md object-cover shadow-[0_0_20px_oklch(0.74_0.17_175/0.3)]"
+          />
           <div>
             <div className="text-sm font-semibold tracking-tight">
               Cenli <span className="text-gradient-primary">DPE</span>

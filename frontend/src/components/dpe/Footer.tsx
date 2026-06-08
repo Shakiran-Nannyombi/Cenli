@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Zap, Github, Twitter, Linkedin } from "lucide-react";
+import { Github, Linkedin, Twitter } from "lucide-react";
 
 export function Footer() {
   return (
@@ -8,9 +8,11 @@ export function Footer() {
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
           <div className="flex flex-col gap-2">
             <Link to="/" className="flex items-center gap-2">
-              <div className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-primary to-accent">
-                <Zap className="h-3.5 w-3.5 text-background" />
-              </div>
+              <img
+                src="/logocenli.png"
+                alt="Cenli"
+                className="h-7 w-7 rounded-md object-cover"
+              />
               <span className="text-sm font-semibold tracking-tight">
                 Cenli <span className="text-gradient-primary">DPE</span>
               </span>
@@ -35,7 +37,7 @@ export function Footer() {
             </div>
             <div className="flex flex-col gap-2">
               <span className="font-medium text-foreground">Connect</span>
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
+              <a href="https://github.com/Shakiran-Nannyombi/Cenli" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
                 <Github className="h-3 w-3" /> GitHub
               </a>
               <a href="https://twitter.com" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
