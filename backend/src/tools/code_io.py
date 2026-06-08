@@ -1,11 +1,3 @@
-"""
-tools/code_io.py
-----------------
-File-system and CI-pipeline tools exposed to the Gemini agent as
-local function calls.  Every function returns a plain string so the
-model can interpret the result directly without extra marshalling.
-"""
-
 from __future__ import annotations
 
 import subprocess

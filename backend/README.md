@@ -1,33 +1,65 @@
 # Cenli DPE — Backend
 
-Production-grade Python backend for the Dev Clarifier AI pipeline.  
-Gemini 2.5 Flash · Arize Phoenix OpenInference · FastAPI
+**Arize Hackathon Track: Build Gemini Agents with Full Observability and Self-Introspection via MCP**
+
+Production-grade Python backend for the Dev Clarifier AI pipeline.
+
+| Component | Technology |
+|-----------|-----------|
+| Agent runtime | `google-genai` SDK (Gemini 2.5 Flash) |
+| Instrumentation | `openinference-instrumentation-google-genai` |
+| Trace collector | Arize Phoenix (Cloud or self-hosted) |
+| Runtime introspection | `@arizeai/phoenix-mcp` via npx |
+| Evaluation | LLM-as-a-Judge (structured JSON, temp=0.1) |
+| HTTP server | FastAPI + uvicorn |
 
 ---
 
-## Architecture
+## Hackathon Criteria Checklist
+
+| Requirement | Implementation |
+|-------------|---------------|
+| ✅ Code-owned agent runtime | `google-genai` SDK — `client.models.generate_content`, not Agent Builder |
+| ✅ OpenInference instrumentation | `GoogleGenAIInstrumentor().instrument()` in `agent.py` |
+| ✅ Phoenix Cloud **or** self-hosted | Env-switched: set `PHOENIX_API_KEY` → Cloud, leave blank → local Docker |
+| ✅ Phoenix MCP as runtime tool | `mcp_config.json` + agent Stage 2 explicitly calls phoenix MCP tools |
+| ✅ LLM-as-a-Judge evaluations | `validator.py` with `response_schema` + `response_mime_type="application/json"` |
+| ✅ Eval scores logged back to Phoenix | `_annotate_span_with_evaluation()` writes `eval.*` attributes onto the active span |
+| ✅ Self-improvement loop | Agent Stage 2 queries its own prior `eval.verdict` + `eval.technical_debt_reduction_pct` scores to calibrate refactor strategy |
+
+---
+
+## Pipeline Architecture
 
 ```
 POST /api/pipeline/submit
         │
         ▼
-  agent.py  ─── Stage 1: read_source_code()   ← local tool
+  agent.py — process_pipeline_submission()
         │
-        ├─── Stage 2: Phoenix MCP query        ← @arizeai/phoenix-mcp
-        │           (historical trace context)
+        ├── STAGE 1 INGEST
+        │     read_source_code()  ← local function call
         │
-        ├─── Stage 3: Gemini refactor loop     ← gemini-2.5-flash
-        │           (multi-turn agentic)
+        ├── STAGE 2 SELF-INTROSPECT  ← Phoenix MCP server
+        │     phoenix_search_spans("prior refactor sessions")
+        │     phoenix_get_traces(project="dev-clarifier-dpe")
+        │     → Synthesise Refactor Strategy from historical eval scores
         │
-        ├─── Stage 4: run_syntax_lint()        ← black + flake8
+        ├── STAGE 3 REFACTOR
+        │     Gemini rewrites code guided by Stage 2 context
         │
-        └─── validator.py LLM-as-a-Judge       ← gemini-2.5-flash (temp=0.1)
-                    │
-                    └── JSON → frontend schema
+        ├── STAGE 4 LINT
+        │     run_syntax_lint()  ← black + flake8 local call
+        │     write_refactored_code()
+        │
+        └── STAGE 5 JUDGE + ANNOTATE
+              validator.evaluate_code_quality()   ← separate Gemini call, temp=0.1
+              _annotate_span_with_evaluation()    → writes eval.* to Phoenix span
 ```
 
-All Gemini calls are auto-instrumented via `openinference-instrumentation-google-genai`
-and traced to Arize Phoenix using OTLP.
+Every `generate_content` call in stages 1-4 is **automatically traced** via
+`GoogleGenAIInstrumentor` → OpenInference OTLP → Phoenix. No manual span
+creation required.
 
 ---
 
@@ -36,9 +68,9 @@ and traced to Arize Phoenix using OTLP.
 ### 1. Prerequisites
 
 - Python 3.11+
-- Node.js 18+ (for the Phoenix MCP server via `npx`)
-- A running [Arize Phoenix](https://docs.arize.com/phoenix) instance  
-  (`docker run -p 6006:6006 arizephoenix/phoenix:latest`)
+- Node.js 18+ (for `npx @arizeai/phoenix-mcp`)
+- Gemini API key from [AI Studio](https://aistudio.google.com/apikey)
+- Phoenix Cloud account **or** Docker for local Phoenix
 
 ### 2. Install
 
@@ -53,23 +85,33 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env and fill in your GEMINI_API_KEY
+# Edit .env:
+#   GEMINI_API_KEY=...
+#   PHOENIX_API_KEY=...   (for Phoenix Cloud)
+#   or leave PHOENIX_API_KEY blank for local Docker
 ```
 
-### 4. Start Phoenix (local Docker)
+### 4. Start Phoenix
 
+**Option A — Phoenix Cloud (recommended)**
+```
+Sign up at https://app.phoenix.arize.com → get API key → set PHOENIX_API_KEY in .env
+```
+
+**Option B — Local Docker**
 ```bash
 docker run -p 6006:6006 arizephoenix/phoenix:latest
-# Dashboard → http://localhost:6006
+# Dashboard: http://localhost:6006
 ```
 
-### 5. Run the API server
+### 5. Run the server
 
 ```bash
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
+# API docs: http://localhost:8000/docs
 ```
 
-### 6. Test
+### 6. Run tests
 
 ```bash
 pytest tests/ -v
@@ -81,21 +123,14 @@ pytest tests/ -v
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/api/pipeline/status` | Health check — confirms env vars and version |
-| `POST` | `/api/pipeline/submit` | Submit code as JSON `{filename, code}` for full pipeline |
-| `POST` | `/api/pipeline/upload` | Submit code as a file upload (multipart) |
-| `POST` | `/api/evaluate`        | Direct LLM-as-a-Judge call `{original, refactored}` |
+| `GET`  | `/api/pipeline/status` | Health + env readiness check |
+| `POST` | `/api/pipeline/submit` | Full pipeline (JSON body `{filename, code}`) |
+| `POST` | `/api/pipeline/upload` | Full pipeline (multipart file upload) |
+| `POST` | `/api/evaluate` | Direct LLM-as-a-Judge `{original, refactored}` |
+| `GET`  | `/api/traces` | Proxy: recent Phoenix traces |
+| `GET`  | `/api/traces/{id}/spans` | Proxy: spans for a trace |
 
-### `POST /api/pipeline/submit` — request
-
-```json
-{
-  "filename": "users_controller.py",
-  "code": "def getUsers(req, res):\n    ..."
-}
-```
-
-### `POST /api/pipeline/submit` — response
+### Submit response shape
 
 ```json
 {
@@ -108,16 +143,17 @@ pytest tests/ -v
     "modularity_ratio": "Highly Modular",
     "verdict": "approve",
     "confidence_pct": 91,
-    "summary": "Well-structured refactor with clear SRP boundaries."
+    "summary": "Clear SRP decomposition with full type coverage."
   },
   "agent_summary": {
     "stage": "complete",
     "original_loc": 18,
-    "refactored_loc": 24,
+    "refactored_loc": 26,
     "lint_status": "LINT_PASS",
+    "refactor_strategy": "Historical traces showed token bottlenecks from deeply nested loops; flattened to list comprehensions.",
     "refactored_code": "..."
   },
-  "refactored_path": "/tmp/dpe_submission_refactored.py"
+  "refactored_path": "/tmp/dpe_submit_refactored.py"
 }
 ```
 
@@ -125,15 +161,16 @@ pytest tests/ -v
 
 ## MCP Configuration
 
-`mcp_config.json` wires the Phoenix MCP server to the agent.  
-The agent uses it to query historical trace data for self-correction.
+`mcp_config.json` contains two server entries:
 
-To use the MCP server, ensure `npx` is available and Phoenix is running:
+| Entry | `--baseUrl` | When to use |
+|-------|-------------|-------------|
+| `phoenix` | `http://localhost:6006` | Local Docker (default, `disabled: false`) |
+| `phoenix-cloud` | `https://app.phoenix.arize.com` | Phoenix Cloud (`disabled: true` by default) |
 
-```bash
-# The agent calls this automatically; you can test it manually:
-npx -y @arizeai/phoenix-mcp@latest --baseUrl http://localhost:6006
-```
+To use Phoenix Cloud: set `"disabled": false` on `phoenix-cloud` and `"disabled": true` on `phoenix`, then set `PHOENIX_API_KEY` in your `.env`.
+
+The agent's Stage 2 system prompt instructs Gemini to call `phoenix_search_spans` and `phoenix_get_traces` to retrieve prior evaluation scores before deciding on a refactor strategy.
 
 ---
 
@@ -142,28 +179,28 @@ npx -y @arizeai/phoenix-mcp@latest --baseUrl http://localhost:6006
 ```
 backend/
 ├── src/
-│   ├── agent.py          # Core orchestration loop
-│   ├── server.py         # FastAPI HTTP server
+│   ├── agent.py          # Core orchestration loop — all 6 stages
+│   ├── server.py         # FastAPI HTTP server + Phoenix proxy routes
 │   └── tools/
-│       ├── code_io.py    # File read/write/lint tools
-│       └── validator.py  # LLM-as-a-Judge engine
+│       ├── code_io.py    # read / write / lint file tools
+│       └── validator.py  # LLM-as-a-Judge with response_schema
 ├── tests/
-│   ├── test_code_io.py   # File tool unit tests
-│   └── test_server.py    # API integration tests
-├── mcp_config.json       # Phoenix MCP server config
+│   ├── test_code_io.py
+│   └── test_server.py
+├── mcp_config.json       # Phoenix MCP server config (local + cloud)
 ├── .env.example          # Environment variable template
-├── requirements.txt      # Python dependencies
-└── pyproject.toml        # Tool configuration
+├── requirements.txt
+└── pyproject.toml
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | ✅ | — | Gemini API key from [AI Studio](https://aistudio.google.com/apikey) |
-| `PHOENIX_COLLECTOR_ENDPOINT` | ❌ | `http://localhost:6006/v1/traces` | OTLP endpoint for Phoenix |
-| `PHOENIX_API_KEY` | ❌ | — | Only needed for Phoenix Cloud |
-| `HOST` | ❌ | `0.0.0.0` | uvicorn bind host |
-| `PORT` | ❌ | `8000` | uvicorn bind port |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | ✅ | From [AI Studio](https://aistudio.google.com/apikey) |
+| `PHOENIX_API_KEY` | Cloud only | From app.phoenix.arize.com → Settings |
+| `PHOENIX_COLLECTOR_ENDPOINT` | ❌ | Auto-set based on `PHOENIX_API_KEY` |
+| `HOST` | ❌ | uvicorn bind host (default `0.0.0.0`) |
+| `PORT` | ❌ | uvicorn bind port (default `8000`) |
