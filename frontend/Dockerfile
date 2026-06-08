@@ -2,7 +2,7 @@
 # Cenli DPE Frontend — Cloud Run Dockerfile
 # ============================================================
 # Build:   docker build -t cenli-frontend .
-# Run:     docker run -p 3000:3000 cenli-frontend
+# Run:     docker run -p 8080:8080 cenli-frontend
 # Deploy:  gcloud run deploy cenli-frontend --source .
 # ============================================================
 
@@ -33,12 +33,12 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
-# Cloud Run injects PORT env var; default to 3000
-ENV PORT=3000
+# Cloud Run injects PORT=8080; default to 8080 to match
+ENV PORT=8080
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
 
-EXPOSE 3000
+EXPOSE 8080
 
-# Start the TanStack Start server using vite preview
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
+# Use shell form so $PORT is expanded at runtime
+CMD npm run preview -- --host 0.0.0.0 --port $PORT
