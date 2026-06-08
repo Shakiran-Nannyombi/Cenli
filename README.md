@@ -3,18 +3,10 @@
 <img src="banner.png" alt="Cenli DPE — Dev Clarifier AI" width="100%" />
 
 <br/>
-<br/>
-
-<img src="frontend/public/logocenli.png" alt="Cenli Logo" width="72" />
 
 # Cenli — Dev Clarifier AI
 
 **The autonomous DPE guardrail agent that intercepts, refactors, and gates AI-generated code before it hits main.**
-
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-cenli--dpe-4ade80?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cenli-dpe-backend-183690574774.europe-west2.run.app/api/pipeline/status)
-[![License: MIT](https://img.shields.io/badge/License-MIT-a78bfa?style=for-the-badge)](LICENSE)
-[![Arize Hackathon](https://img.shields.io/badge/Arize%20Hackathon-2026-f97316?style=for-the-badge)](https://arize.com)
-[![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
 
 </div>
 
