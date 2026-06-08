@@ -15,7 +15,9 @@ google-genai>=1.16.0
 arize-phoenix-otel>=0.16.1
 
 # Auto-instrumentor for the unified google-genai SDK
-openinference-instrumentation-google-genai>=1.0.2
+# NOTE: pin to 0.1.17 — versions 1.0.x import google.genai._interactions
+# which was removed from the SDK. Manual OTEL spans used in agent.py.
+openinference-instrumentation-google-genai==0.1.17
 
 # OpenTelemetry core — span API used for eval annotation
 opentelemetry-api>=1.31.0
