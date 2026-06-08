@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Judge configuration
 # ---------------------------------------------------------------------------
-_JUDGE_MODEL = "gemini-3.0"
+_JUDGE_MODEL = "gemini-2.5-flash"
 
 # JSON response schema — enforces the exact shape the frontend expects.
 # Using response_schema in addition to response_mime_type gives us

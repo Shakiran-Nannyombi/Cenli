@@ -12,8 +12,14 @@ from typing import Any
 # Arize Phoenix — OpenTelemetry tracing
 # ---------------------------------------------------------------------------
 import phoenix.otel
-from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
 from opentelemetry import trace as otel_trace
+from opentelemetry.trace import SpanKind
+
+# NOTE: openinference-instrumentation-google-genai has a broken import
+# against google-genai >= 1.0 (expects google.genai._interactions which
+# was removed). We instrument manually using the OpenTelemetry tracer
+# that phoenix.otel.register() sets as the global provider.
+# Phoenix auto-converts OTel GenAI semantic conventions to OpenInference.
 
 # ---------------------------------------------------------------------------
 # Google GenAI SDK
@@ -83,7 +89,9 @@ def _bootstrap_tracing() -> None:
         headers=headers,
     )
 
-    GoogleGenAIInstrumentor().instrument()
+    # We skip GoogleGenAIInstrumentor — it has a broken internal import
+    # against google-genai >= 1.0. Manual OTEL spans are used instead
+    # (see _traced_generate_content below). Phoenix accepts both styles.
 
     logger.info(
         "Tracing active → project='%s' collector='%s'",
@@ -93,6 +101,48 @@ def _bootstrap_tracing() -> None:
 
 
 _bootstrap_tracing()
+
+# Module-level tracer — used by _traced_generate_content
+_tracer = otel_trace.get_tracer("cenli.dpe.agent")
+
+
+# ===========================================================================
+# Traced generate_content wrapper
+# ===========================================================================
+
+def _traced_generate_content(
+    client: genai.Client,
+    *,
+    model: str,
+    contents: list,
+    config: types.GenerateContentConfig,
+    span_name: str = "llm.generate_content",
+) -> types.GenerateContentResponse:
+    """
+    Thin wrapper around client.models.generate_content that emits an
+    OpenTelemetry span with LLM-grade attributes Phoenix understands.
+    Uses OpenInference semantic conventions so Phoenix renders the span
+    with full message bodies in the Traces UI.
+    """
+    with _tracer.start_as_current_span(span_name, kind=SpanKind.CLIENT) as span:
+        span.set_attribute("llm.model_name", model)
+        span.set_attribute("dpe.project", _PROJECT_NAME)
+        span.set_attribute("openinference.span.kind", "LLM")
+
+        response = client.models.generate_content(
+            model=model, contents=contents, config=config,
+        )
+
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            um = response.usage_metadata
+            if getattr(um, "prompt_token_count", None):
+                span.set_attribute("llm.token_count.prompt", um.prompt_token_count)
+            if getattr(um, "candidates_token_count", None):
+                span.set_attribute("llm.token_count.completion", um.candidates_token_count)
+            if getattr(um, "total_token_count", None):
+                span.set_attribute("llm.token_count.total", um.total_token_count)
+
+        return response
 
 
 # ===========================================================================
@@ -337,18 +387,24 @@ async def _run_agent_loop(file_path: str) -> dict:
                 )
             ),
             temperature=0.2,
+            # Gemini 3 Flash: disable thinking entirely when using function calling.
+            # The thought_signature requirement causes 400 errors in tool call loops.
+            thinking_config=types.ThinkingConfig(
+                thinking_budget=0,
+                include_thoughts=False,
+            ),
         )
 
         contents: list[types.Content] = [
             types.Content(
                 role="user",
-                parts=[types.Part.from_text(
+                parts=[types.Part.from_text(text=(
                     f"New DPE pipeline submission received.\n"
                     f"File path: {file_path}\n\n"
                     "Execute all five pipeline stages in order. "
                     "IMPORTANT: Do not skip Stage 2 — always call at least "
                     "one Phoenix MCP tool, even if no history is returned."
-                )],
+                ))],
             )
         ]
 
@@ -365,10 +421,12 @@ async def _run_agent_loop(file_path: str) -> dict:
         for turn in range(_MAX_TURNS):
             logger.debug("Turn %d/%d", turn + 1, _MAX_TURNS)
 
-            response = client.models.generate_content(
+            response = _traced_generate_content(
+                client,
                 model=_REFACTOR_MODEL,
                 contents=contents,
                 config=gen_config,
+                span_name=f"dpe.agent.turn_{turn + 1}",
             )
 
             candidate = response.candidates[0]
