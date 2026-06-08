@@ -158,40 +158,56 @@ def evaluate_code_quality(original: str, refactored: str) -> str:
         "return the JSON object."
     )
 
-    try:
-        response = client.models.generate_content(
-            model=_JUDGE_MODEL,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=_JUDGE_SYSTEM_PROMPT,
-                temperature=0.1,
-                # Force structured JSON output — safe for frontend schema
-                response_mime_type="application/json",
-                response_schema=_RESPONSE_SCHEMA,
-            ),
-        )
+    gen_config = types.GenerateContentConfig(
+        system_instruction=_JUDGE_SYSTEM_PROMPT,
+        temperature=0.1,
+        response_mime_type="application/json",
+        response_schema=_RESPONSE_SCHEMA,
+    )
 
-        raw = response.text.strip()
+    # Retry with exponential backoff for 503 (overload) and 429 (rate limit)
+    import time
+    last_exc = None
+    for attempt in range(4):          # up to 4 attempts: 0, 2, 4, 8 seconds
+        if attempt > 0:
+            wait = 2 ** attempt       # 2, 4, 8 seconds
+            logger.info("Gemini overloaded — retrying in %ds (attempt %d/4)", wait, attempt + 1)
+            time.sleep(wait)
+        try:
+            response = client.models.generate_content(
+                model=_JUDGE_MODEL,
+                contents=user_prompt,
+                config=gen_config,
+            )
 
-        # Validate the response round-trips cleanly before returning
-        parsed: dict = json.loads(raw)
+            raw = response.text.strip()
+            parsed: dict = json.loads(raw)
 
-        logger.info(
-            "Judge evaluation complete → verdict=%s debt_reduction=%s%% confidence=%s%%",
-            parsed.get("verdict"),
-            parsed.get("technical_debt_reduction_percentage"),
-            parsed.get("confidence_pct"),
-        )
+            logger.info(
+                "Judge evaluation complete → verdict=%s debt_reduction=%s%% confidence=%s%%",
+                parsed.get("verdict"),
+                parsed.get("technical_debt_reduction_percentage"),
+                parsed.get("confidence_pct"),
+            )
+            return json.dumps(parsed, indent=2)
 
-        return json.dumps(parsed, indent=2)
+        except json.JSONDecodeError as exc:
+            logger.error("Judge returned non-JSON: %s", exc)
+            return json.dumps({
+                "error": "judge_non_json",
+                "detail": str(exc),
+            })
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            err_str = str(exc)
+            # Only retry on 503 (overload) or 429 (rate limit)
+            if "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                logger.warning("Gemini transient error (attempt %d): %s", attempt + 1, err_str[:120])
+                continue   # retry
+            # Non-retryable error — fail immediately
+            logger.exception("Judge call failed (non-retryable)")
+            return json.dumps({"error": "judge_call_failed", "detail": err_str})
 
-    except json.JSONDecodeError as exc:
-        logger.error("Judge returned non-JSON: %s", exc)
-        return json.dumps({
-            "error": "judge_non_json",
-            "detail": str(exc),
-            "raw_preview": (response.text[:200] if "response" in dir() else ""),
-        })
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("Judge call failed")
-        return json.dumps({"error": "judge_call_failed", "detail": str(exc)})
+    # All retries exhausted
+    logger.error("Judge failed after 4 attempts: %s", str(last_exc)[:200])
+    return json.dumps({"error": "judge_overloaded", "detail": "Gemini API overloaded after 4 retries. Try again in a moment."})
