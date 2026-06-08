@@ -10,11 +10,13 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "@/components/dpe/Header";
 import { Footer } from "@/components/dpe/Footer";
 import { AuthProvider } from "@/lib/auth";
 
+// ---------------------------------------------------------------------------
+// 404 page
+// ---------------------------------------------------------------------------
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -37,12 +39,12 @@ function NotFoundComponent() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Error boundary page
+// ---------------------------------------------------------------------------
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -51,14 +53,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong. Try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={() => { router.invalidate(); reset(); }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
@@ -75,29 +74,28 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Root route
+// ---------------------------------------------------------------------------
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Cenli" },
-      { name: "description", content: "Cenli is a DPE dashboard that mitigates technical debt from AI code generation." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Cenli" },
-      { property: "og:description", content: "Cenli is a DPE dashboard that mitigates technical debt from AI code generation." },
+      { title: "Cenli DPE — Ship AI code without the debt" },
+      { name: "description", content: "Cenli is the DPE guardrail platform that audits, refactors and gates AI-generated code before it hits main." },
+      { property: "og:title", content: "Cenli DPE — Ship AI code without the debt" },
+      { property: "og:description", content: "Autonomous refactoring, LLM-as-a-Judge evaluation, and Phoenix-grade observability for every AI commit." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Cenli" },
-      { name: "twitter:description", content: "Cenli is a DPE dashboard that mitigates technical debt from AI code generation." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d0b75a5a-e0a6-4324-8dbf-2132d4be9371/id-preview-f4116b2e--db1a6da9-83e3-4002-b227-30ef94a382fe.lovable.app-1780922093306.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d0b75a5a-e0a6-4324-8dbf-2132d4be9371/id-preview-f4116b2e--db1a6da9-83e3-4002-b227-30ef94a382fe.lovable.app-1780922093306.png" },
+      { property: "og:image", content: "/logocenli.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Cenli DPE — Ship AI code without the debt" },
+      { name: "twitter:description", content: "DPE guardrail pipeline: Ingest → Refactor → Lint → Judge → Annotate." },
+      { name: "twitter:image", content: "/logocenli.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/logocenli.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -113,14 +111,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "Organization",
-              name: "Cenli",
-              url: "https://dev-clarifier-ai.lovable.app",
-              description: "Developer productivity engineering platform that audits, refactors and gates AI-generated code.",
-            },
-            {
-              "@type": "WebSite",
               name: "Cenli DPE",
-              url: "https://dev-clarifier-ai.lovable.app",
+              url: "https://cenli-dpe-backend-183690574774.europe-west2.run.app",
+              description: "Developer productivity engineering platform that audits, refactors and gates AI-generated code.",
             },
           ],
         }),
@@ -149,13 +142,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="flex min-h-screen flex-col text-foreground">
           <Header />
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Footer />
         </div>

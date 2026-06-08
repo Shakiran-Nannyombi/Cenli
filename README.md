@@ -177,17 +177,6 @@ Cenli/
 
 ---
 
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | ✅ | [AI Studio](https://aistudio.google.com/apikey) |
-| `PHOENIX_API_KEY` | Cloud only | [app.phoenix.arize.com](https://app.phoenix.arize.com) → Settings → API Keys |
-| `PHOENIX_COLLECTOR_ENDPOINT` | ❌ | Auto-set from `PHOENIX_API_KEY` |
-| `GOOGLE_CLOUD_PROJECT` | Deploy only | GCP project for Cloud Run |
-
----
-
 <div align="center">
 
 Built for the **Arize × Google Gemini Hackathon 2026**
