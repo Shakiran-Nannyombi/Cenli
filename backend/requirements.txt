@@ -1,0 +1,45 @@
+# ============================================================
+# Cenli DPE Backend — Python Dependencies
+# ============================================================
+# Install:  pip install -r requirements.txt
+# Python:   3.11+
+# ============================================================
+
+# --- Google Gemini (unified SDK) ----------------------------
+google-genai>=1.16.0
+
+# --- Arize Phoenix tracing client ---------------------------
+# arize-phoenix-otel  →  ONLY the OTLP tracing client.
+# DO NOT use arize-phoenix (full server) — it pulls in pandas/pyarrow
+# and requires pytz which breaks on Python 3.12 venvs.
+arize-phoenix-otel>=0.16.1
+
+# Auto-instrumentor for the unified google-genai SDK
+openinference-instrumentation-google-genai>=1.0.2
+
+# OpenTelemetry core — span API used for eval annotation
+opentelemetry-api>=1.31.0
+opentelemetry-sdk>=1.31.0
+opentelemetry-exporter-otlp>=1.31.0
+
+# --- FastAPI server -----------------------------------------
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.20
+
+# --- HTTP client (Phoenix proxy routes) --------------------
+httpx>=0.28.0
+
+# --- Pydantic -----------------------------------------------
+pydantic>=2.11.0
+
+# --- Environment management ---------------------------------
+python-dotenv>=1.1.0
+
+# --- Linting tools (used by run_syntax_lint) ----------------
+black>=25.1.0
+flake8>=7.2.0
+
+# --- Testing ------------------------------------------------
+pytest>=8.4.0
+pytest-asyncio>=0.26.0

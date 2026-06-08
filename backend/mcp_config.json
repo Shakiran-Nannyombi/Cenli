@@ -1,0 +1,56 @@
+{
+    "mcpServers": {
+        "phoenix": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@arizeai/phoenix-mcp@latest",
+                "--baseUrl",
+                "http://localhost:6006"
+            ],
+            "env": {
+                "PHOENIX_API_KEY": "${PHOENIX_API_KEY}"
+            },
+            "disabled": false,
+            "autoApprove": [
+                "get_traces",
+                "search_spans",
+                "get_span",
+                "list_projects",
+                "get_project",
+                "get_sessions",
+                "get_session",
+                "list_datasets",
+                "get_dataset",
+                "list_experiments",
+                "get_experiment"
+            ]
+        },
+        "phoenix-cloud": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@arizeai/phoenix-mcp@latest",
+                "--baseUrl",
+                "https://app.phoenix.arize.com"
+            ],
+            "env": {
+                "PHOENIX_API_KEY": "${PHOENIX_API_KEY}"
+            },
+            "disabled": true,
+            "autoApprove": [
+                "get_traces",
+                "search_spans",
+                "get_span",
+                "list_projects",
+                "get_project",
+                "get_sessions",
+                "get_session",
+                "list_datasets",
+                "get_dataset",
+                "list_experiments",
+                "get_experiment"
+            ]
+        }
+    }
+}

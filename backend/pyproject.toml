@@ -1,0 +1,24 @@
+[project]
+name = "cenli-dpe-backend"
+version = "1.0.0"
+description = "Cenli DPE Agent — Gemini + Arize Phoenix guardrail pipeline backend"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "arize-phoenix==8.0.0",
+    "black==25.1.0",
+    "fastapi==0.115.12",
+    "flake8==7.2.0",
+    "google-genai==1.16.0",
+    "httpx==0.28.1",
+    "openinference-instrumentation-google-genai>=0.4.0",
+    "opentelemetry-api==1.31.0",
+    "opentelemetry-exporter-otlp==1.31.0",
+    "opentelemetry-sdk==1.31.0",
+    "pydantic==2.11.4",
+    "pytest==8.4.0",
+    "pytest-asyncio==0.26.0",
+    "python-dotenv==1.1.0",
+    "python-multipart==0.0.20",
+    "uvicorn[standard]==0.34.0",
+]
