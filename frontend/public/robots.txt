@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dev-clarifier-ai.lovable.app/sitemap.xml

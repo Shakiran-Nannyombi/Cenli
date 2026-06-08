@@ -1,0 +1,19 @@
+# Cenli DPE
+
+> Cenli is a developer productivity engineering (DPE) platform that audits, refactors and gates AI-generated code before it reaches main.
+
+Cenli sits between codegen agents and the main branch. It ingests every AI-authored commit, traces agent loops and tool calls, scores the result with an LLM-as-judge against a strict-modular policy bundle, and exposes human-in-the-loop overrides for refactor decisions.
+
+## Pages
+
+- [Home](/): Product overview, workflow and platform features.
+- [About](/about): Mission and architecture behind the control plane for AI code.
+- [Sign in](/auth): Authenticate to access the DPE workspace.
+
+## Optional
+
+- [Dashboard](/dashboard): Authenticated pipeline ingestion and evaluation feed.
+- [Telemetry](/telemetry): Authenticated nested trace spans for agent runs.
+- [Evaluations](/evaluations): Authenticated LLM-as-judge audit log.
+- [Policies](/policies): Authenticated strict-modular policy catalog.
+- [Agents](/agents): Authenticated registry of codegen and judge agents.
