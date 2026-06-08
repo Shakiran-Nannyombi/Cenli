@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TelemetryRouteImport } from './routes/telemetry'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as EvaluationsRouteImport } from './routes/evaluations'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -22,11 +21,6 @@ import { Route as IndexRouteImport } from './routes/index'
 const TelemetryRoute = TelemetryRouteImport.update({
   id: '/telemetry',
   path: '/telemetry',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliciesRoute = PoliciesRouteImport.update({
@@ -73,7 +67,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/evaluations': typeof EvaluationsRoute
   '/policies': typeof PoliciesRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telemetry': typeof TelemetryRoute
 }
 export interface FileRoutesByTo {
@@ -84,7 +77,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/evaluations': typeof EvaluationsRoute
   '/policies': typeof PoliciesRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telemetry': typeof TelemetryRoute
 }
 export interface FileRoutesById {
@@ -96,7 +88,6 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/evaluations': typeof EvaluationsRoute
   '/policies': typeof PoliciesRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telemetry': typeof TelemetryRoute
 }
 export interface FileRouteTypes {
@@ -109,7 +100,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/evaluations'
     | '/policies'
-    | '/sitemap.xml'
     | '/telemetry'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -120,7 +110,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/evaluations'
     | '/policies'
-    | '/sitemap.xml'
     | '/telemetry'
   id:
     | '__root__'
@@ -131,7 +120,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/evaluations'
     | '/policies'
-    | '/sitemap.xml'
     | '/telemetry'
   fileRoutesById: FileRoutesById
 }
@@ -143,7 +131,6 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   EvaluationsRoute: typeof EvaluationsRoute
   PoliciesRoute: typeof PoliciesRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TelemetryRoute: typeof TelemetryRoute
 }
 
@@ -154,13 +141,6 @@ declare module '@tanstack/react-router' {
       path: '/telemetry'
       fullPath: '/telemetry'
       preLoaderRoute: typeof TelemetryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/policies': {
@@ -223,7 +203,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   EvaluationsRoute: EvaluationsRoute,
   PoliciesRoute: PoliciesRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TelemetryRoute: TelemetryRoute,
 }
 export const routeTree = rootRouteImport
