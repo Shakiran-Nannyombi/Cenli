@@ -31,11 +31,11 @@ WORKDIR /app
 # TanStack Start outputs the SSR server to dist/
 COPY --from=builder /app/dist ./dist
 
-# Cloud Run injects PORT=8080; default to 8080 to match
-ENV PORT=8080
+# Port the SSR server listens on
+ENV PORT=3000
 ENV NODE_ENV=production
 
-EXPOSE 8080
+EXPOSE 3000
 
 # Run the TanStack Start SSR server
 CMD node dist/server/server.js
