@@ -70,6 +70,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://dev-clarifier-ai.lovable.app",
         "https://cenli-frontend-183690574774.europe-west2.run.app",
+        "https://cenli-183690574774.europe-west1.run.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
