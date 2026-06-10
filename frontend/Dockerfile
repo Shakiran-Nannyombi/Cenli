@@ -28,8 +28,8 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# TanStack Start outputs the SSR server to .output/
-COPY --from=builder /app/.output ./.output
+# TanStack Start outputs the SSR server to dist/
+COPY --from=builder /app/dist ./dist
 
 # Cloud Run injects PORT=8080; default to 8080 to match
 ENV PORT=8080
@@ -37,5 +37,5 @@ ENV NODE_ENV=production
 
 EXPOSE 8080
 
-# Run the TanStack Start SSR server directly
-CMD node .output/server/index.mjs
+# Run the TanStack Start SSR server
+CMD node dist/server/server.js
