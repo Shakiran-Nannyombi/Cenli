@@ -62,13 +62,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow the Lovable/Vite frontend to reach this API
+# CORS — allow the frontend to reach this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
         "https://dev-clarifier-ai.lovable.app",
+        "https://cenli-frontend-183690574774.europe-west2.run.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
